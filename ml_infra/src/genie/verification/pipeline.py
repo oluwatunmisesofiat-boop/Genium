@@ -194,6 +194,8 @@ class VerificationPipeline:
             patch_anomaly_score=anomaly_score,
             color_score=color_score,
             layout_score=layout_score,
+            texture_score=texture_score,
+            texture_mismatch=texture_mismatch,
             inconsistencies=visual_inconsistencies,
             reference_available=(ref_img is not None),
         )

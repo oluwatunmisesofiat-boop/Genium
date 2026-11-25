@@ -159,3 +159,49 @@ async def test_reference_indexer_and_pipeline_comparison(tmp_path):
     )
     assert res_fake.signals.visual_similarity_score < res_ok.signals.visual_similarity_score
     assert any("color mismatch" in r.lower() for r in res_fake.signals.reasons)
+
+
+@pytest.mark.asyncio
+async def test_surface_texture_mismatch_flags_as_fake(tmp_path):
+    from genie.schemas.verdict import VerdictState
+
+    vector_store = InMemoryVectorStore()
+    storage = LocalImageStorage(base_dir=tmp_path / "images")
+
+    ref_img, regions = _make_synthetic_pack()
+    indexer = ReferencePackIndexer(vector_store=vector_store, image_storage=storage)
+    await indexer.index_reference_pack(
+        product_id=str(uuid.uuid4()),
+        product_version_id=str(uuid.uuid4()),
+        image_bgr=ref_img,
+        brand_name="GENIEMED",
+        manufacturer="GENIE PHARMA",
+        nafdac_number="B4-6458",
+        gtin_list=["06150000000012"],
+        version_label="v1.0",
+        face_type="front",
+        semantic_regions=regions,
+    )
+
+    # Simulate counterfeit packaging with a distinctly coarse/grainy surface texture
+    rng = np.random.default_rng(99)
+    grain = rng.normal(0, 28, size=ref_img.shape).astype(np.float32)
+    textured_fake = np.clip(ref_img.astype(np.float32) + grain, 0, 255).astype(np.uint8)
+
+    comp = PackComparator().compare(textured_fake, ref_img, semantic_regions=regions)
+    assert comp.texture_mismatch is True
+    assert comp.is_counterfeit_suspect is True
+    assert any("surface texture" in msg.lower() for msg in comp.inconsistencies)
+
+    pipeline = VerificationPipeline(vector_store=vector_store)
+    _, fake_buf = cv2.imencode(".jpg", textured_fake)
+    fake_b64 = base64.b64encode(fake_buf.tobytes()).decode("utf-8")
+    res_fake = await pipeline.verify_scan(
+        ScanRequest(
+            images=[ScanImage(image_bytes_base64=fake_b64, face_hint="front")],
+            manual_nafdac="B4-6458",
+        )
+    )
+    assert res_fake.verdict == VerdictState.SUSPICIOUS
+    assert "surface texture" in res_fake.explanation.lower()
+
