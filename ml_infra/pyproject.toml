@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "genie-ml-infra"
+version = "0.1.0"
+description = "GENIE AI — Core ML & Verification Infrastructure for Genium"
+readme = "README.md"
+authors = [{ name = "Genie AI Core Team" }]
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.28.0",
+    "pydantic>=2.6.0",
+    "pydantic-settings>=2.2.0",
+    "sqlalchemy>=2.0.28",
+    "asyncpg>=0.29.0",
+    "alembic>=1.13.1",
+    "biip>=3.4.0",
+    "zxing-cpp>=2.2.0",
+    "pyzbar>=0.1.9",
+    "pylibdmtx>=0.1.10",
+    "pillow>=10.2.0",
+    "numpy>=1.26.0",
+    "opencv-python-headless>=4.9.0",
+    "onnxruntime>=1.17.0",
+    "scikit-learn>=1.4.0",
+    "httpx>=0.27.0",
+    "google-genai>=1.0.0",
+    "pyyaml>=6.0.1",
+    "structlog>=24.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.5",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.3.0",
+    "mypy>=1.9.0",
+    "black>=24.2.0",
+]
+cv-training = [
+    "torch>=2.2.0",
+    "torchvision>=0.17.0",
+    "ultralytics>=8.1.0",
+    "anomalib>=1.0.0",
+    "lightglue>=0.0.1",
+    "paddlepaddle>=2.6.0",
+    "paddleocr>=2.7.0",
+]
+storage = [
+    "boto3>=1.34.0",
+    "qdrant-client>=1.8.0",
+    "pgvector>=0.2.5",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["genie*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = ["E501"]
