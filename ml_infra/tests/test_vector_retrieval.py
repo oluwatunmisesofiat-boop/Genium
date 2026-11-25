@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import pytest
 
-from genie.storage.vector_store import InMemoryVectorStore
+from genie.storage.vector_store import InMemoryVectorStore, SQLiteVectorStore
 from genie.vision.embed import VisualEmbedder
 
 
@@ -61,3 +61,30 @@ async def test_vector_store_upsert_and_search():
     filtered = await store.search(query_vec, top_k=5, filter_metadata={"gtin_list": "06151234567891"})
     assert len(filtered) == 1
     assert filtered[0].id == "prod_coartem"
+
+
+@pytest.mark.asyncio
+async def test_sqlite_vector_store_upsert_and_search(tmp_path):
+    store = SQLiteVectorStore(db_path=tmp_path / "vectors.db")
+    embedder = VisualEmbedder()
+
+    img_a = np.zeros((256, 256, 3), dtype=np.uint8)
+    img_a[:, :] = [20, 180, 40]
+    vec_a = embedder.embed_image(img_a)
+
+    img_b = np.zeros((256, 256, 3), dtype=np.uint8)
+    img_b[:, :] = [30, 20, 220]
+    vec_b = embedder.embed_image(img_b)
+
+    await store.upsert("prod_a", vec_a, {"product_id": "a", "gtin_list": ["111"]})
+    await store.upsert("prod_b", vec_b, {"product_id": "b", "gtin_list": ["222"]})
+    assert await store.count() == 2
+
+    results = await store.search(vec_a, top_k=2)
+    assert len(results) == 2
+    assert results[0].id == "prod_a"
+    assert results[0].score > results[1].score
+
+    filtered = await store.search(vec_a, top_k=5, filter_metadata={"gtin_list": "222"})
+    assert len(filtered) == 1
+    assert filtered[0].id == "prod_b"

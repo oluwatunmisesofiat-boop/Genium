@@ -299,18 +299,18 @@ class PackComparator:
         self, query_bgr: np.ndarray, ref_bgr: np.ndarray
     ) -> float:
         """Compares packaging surface micro-texture via LBP and high-frequency residual energy."""
-        q_norm = self._normalize_luminance(query_bgr, ref_bgr)
-        q_gray = cv2.cvtColor(q_norm, cv2.COLOR_BGR2GRAY)
+        q_gray = cv2.cvtColor(query_bgr, cv2.COLOR_BGR2GRAY)
         r_gray = cv2.cvtColor(ref_bgr, cv2.COLOR_BGR2GRAY)
 
         q_lbp = self._compute_lbp_histogram(q_gray)
         r_lbp = self._compute_lbp_histogram(r_gray)
-        lbp_corr = float(cv2.compareHist(q_lbp, r_lbp, cv2.HISTCMP_CORREL))
-        lbp_sim = float(np.clip((lbp_corr + 1.0) / 2.0 if lbp_corr < 0 else lbp_corr, 0.0, 1.0))
+        lbp_sim = float(np.clip(np.sum(np.minimum(q_lbp, r_lbp)), 0.0, 1.0))
 
-        # High-frequency micro-texture residual (Difference of Gaussians)
-        q_hp = q_gray.astype(np.float32) - cv2.GaussianBlur(q_gray.astype(np.float32), (9, 9), 1.5)
-        r_hp = r_gray.astype(np.float32) - cv2.GaussianBlur(r_gray.astype(np.float32), (9, 9), 1.5)
+        # High-frequency micro-texture residual (Difference of Gaussians, invariant to mean brightness)
+        q_f = q_gray.astype(np.float32)
+        r_f = r_gray.astype(np.float32)
+        q_hp = q_f - cv2.GaussianBlur(q_f, (9, 9), 1.5)
+        r_hp = r_f - cv2.GaussianBlur(r_f, (9, 9), 1.5)
 
         q_std = float(np.std(q_hp))
         r_std = float(np.std(r_hp))
@@ -333,7 +333,7 @@ class PackComparator:
         grid_cos = float(np.clip(np.dot(q_arr, r_arr) / denom, 0.0, 1.0))
 
         hf_sim = 0.50 * energy_ratio + 0.50 * grid_cos
-        return float(np.clip(0.55 * lbp_sim + 0.45 * hf_sim, 0.0, 1.0))
+        return float(np.clip(0.65 * lbp_sim + 0.35 * hf_sim, 0.0, 1.0))
 
     def compare(
         self,

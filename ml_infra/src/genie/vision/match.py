@@ -1,4 +1,4 @@
-"""Geometric alignment and feature matching via LightGlue / SuperPoint and fast local keypoints."""
+"""Geometric alignment and feature matching via OpenCV ORB keypoints and RANSAC homography (no PyTorch)."""
 from dataclasses import dataclass
 from typing import Optional, Tuple
 import cv2
