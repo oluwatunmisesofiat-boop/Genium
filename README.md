@@ -1,7 +1,5 @@
 # Genium: Medicine and Consumable Product Verification Platform
 
-> **Catchy one-liner:** *Verify every pack in seconds — multi-signal AI and regulatory intelligence that stops counterfeit medicines before they reach patients.*
-
 ## Overview
 
 Genium is a multi-tiered product intelligence and counterfeit verification platform designed to protect consumers, pharmacists, and healthcare providers from counterfeit, adulterated, and cloned pharmaceuticals and packaged consumables. By combining camera-based computer vision, barcode and GS1 standards parsing, regulatory cross-checks against National Agency for Food and Drug Administration and Control (NAFDAC) Greenbook records, and calibrated multi-signal fusion, Genium delivers transparent, explainable authenticity verdicts from a single packaging scan.
