@@ -4,13 +4,6 @@
 
 Genium is a hackathon-built counterfeit detection and product intelligence platform (starting with pharmaceuticals in Nigeria). It combines a Next.js web/PWA frontend (`app/`), a product intelligence & orchestration backend (`backend/`), and a stateless computer-vision & signal-fusion ML service (`ml_infra/`) to turn a single smartphone photo into an explainable **3-state authenticity verdict** (`Consistent with genuine`, `Suspicious`, or `Cannot verify`).
 
----
-
-## Catchy One-Liner (for GitHub / Devpost)
-
-> **Snap a pack, spot a fake — multi-signal AI verification that catches counterfeit drugs from barcode to surface texture.**
-
----
 
 ## Why Genium?
 
