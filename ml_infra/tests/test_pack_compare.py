@@ -183,10 +183,10 @@ async def test_surface_texture_mismatch_flags_as_fake(tmp_path):
         semantic_regions=regions,
     )
 
-    # Simulate counterfeit packaging with a distinctly coarse/grainy surface texture
+    # Simulate counterfeit packaging with a distinctly coarse/grainy surface texture (keep below glare threshold)
     rng = np.random.default_rng(99)
-    grain = rng.normal(0, 28, size=ref_img.shape).astype(np.float32)
-    textured_fake = np.clip(ref_img.astype(np.float32) + grain, 0, 255).astype(np.uint8)
+    grain = rng.normal(-8, 14, size=ref_img.shape).astype(np.float32)
+    textured_fake = np.clip(ref_img.astype(np.float32) + grain, 0, 240).astype(np.uint8)
 
     comp = PackComparator().compare(textured_fake, ref_img, semantic_regions=regions)
     assert comp.texture_mismatch is True
