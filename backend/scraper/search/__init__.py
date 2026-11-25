@@ -1,0 +1,140 @@
+"""Web search with a local-first backend chain.
+
+Backends, in order of preference:
+
+- ``duckduckgo`` (default): keyless, works out of the box via the ``ddgs`` package.
+- ``searxng``: your own SearXNG instance (set ``SEARXNG_URL``); keyless and fast.
+- ``serper``: optional cloud fallback (Google via Serper), only if ``SERPER_API_KEY`` is set.
+- ``tavily``: last safety net, only if ``TAVILY_API_KEY`` is set. It runs only when
+  every backend in the chain failed or found nothing.
+
+Pick the primary with ``SEARCH_BACKEND`` and an optional fallback with
+``SEARCH_FALLBACK``. The default is local only: DuckDuckGo, then SearXNG if set.
+"""
+from __future__ import annotations
+
+import os
+from typing import Dict, List, Optional
+
+from ..config import get_settings
+from ..reasons import REASONS, code_for, leading_code
+from ._common import SearchBackendError
+from .cloud import serper_images, serper_search, tavily_search
+from .duckduckgo import ddgs_images, ddgs_search
+from .searxng import searxng_search
+
+BACKENDS = {
+    "duckduckgo": ddgs_search,
+    "searxng": searxng_search,
+    "serper": serper_search,
+    "tavily": tavily_search,
+}
+
+
+def _chain() -> List[str]:
+    s = get_settings()
+    explicit_primary = os.environ.get("SEARCH_BACKEND", "").strip().lower()
+    if not explicit_primary and s.serper_api_key:
+        chain = ["serper", "duckduckgo"]
+        if s.searxng_url:
+            chain.insert(1, "searxng")
+        return chain
+    chain = [s.search_backend]
+    fb = s.search_fallback
+    # The fallback only joins when it is usable; a pinned primary keeps its own error.
+    configured = {"searxng": bool(s.searxng_url), "serper": bool(s.serper_api_key)}
+    if fb and fb != s.search_backend and configured.get(fb, True):
+        chain.append(fb)
+    if s.serper_api_key and "serper" not in chain:
+        chain.append("serper")
+    return [b for b in chain if b in BACKENDS]
+
+
+def error_code(error: Optional[str]) -> Optional[str]:
+    """The fixed code at the start of a backend error (``rate_limited``, ``timeout``,
+    ``error``) from ``search_report()["error"]``, e.g. "duckduckgo: rate_limited: ...";
+    None when the message carries none."""
+    lead = leading_code(error.split(": ", 1)[-1]) if error else None
+    return lead if lead in REASONS or lead == "error" else None
+
+
+def search_report(query: str, max_results: int = 10, *, backend: Optional[str] = None,
+                  **filters) -> Dict[str, object]:
+    """Like `search`, but says what happened: ``{"results", "error", "backend"}``.
+
+    ``backend`` names the backend that answered (None when nothing did), and
+    ``error`` is the FIRST backend error, or None when a backend answered cleanly
+    with no hits, so a rate limit or an unreachable instance is told apart from a
+    query that simply has no hits. If any backend
+    failed, ``errors`` lists ``{engine, reason}`` per failure (reason is a fixed code
+    such as rate_limited or timeout), also when a later backend still delivered. The
+    key is absent when nothing failed.
+    """
+    chain = [backend] if backend else _chain()
+    if not backend and get_settings().tavily_api_key and "tavily" not in chain:
+        chain.append("tavily")
+    if filters.get("language") == "any":  # "any" means no language parameter
+        filters = {k: v for k, v in filters.items() if k != "language"}
+    first_error: Optional[str] = None
+    clean_empty = False
+    errors: List[Dict[str, str]] = []
+    for name in chain:
+        fn = BACKENDS.get(name)
+        if fn is None:
+            continue
+        try:
+            hits = fn(query, max_results, **filters)
+            if hits:
+                done: Dict[str, object] = {"results": hits, "error": None, "backend": name}
+                if errors:
+                    done["errors"] = errors
+                return done
+            clean_empty = True
+        except SearchBackendError as exc:
+            first_error = first_error or f"{name}: {exc}"
+            errors.append({"engine": name, "reason": code_for(str(exc), default="unavailable")})
+            continue
+    failed: Dict[str, object] = {"results": [], "error": None if clean_empty else first_error,
+                              "backend": None}
+    if errors:
+        failed["errors"] = errors
+    return failed
+
+
+def search(query: str, max_results: int = 10, *, backend: Optional[str] = None,
+           **filters) -> List[Dict[str, str]]:
+    """Search the web and return hits as dicts: {title, url, content, engine}.
+
+    Tries the configured backend, then the fallback, and returns the first that
+    yields results. If all of them come back empty and TAVILY_API_KEY is set,
+    Tavily is asked as the last resort. `filters` may include topic, language, country, time_range,
+    include_domains, exclude_domains. Raises SearchBackendError only when one
+    backend was pinned and it failed; `search_report` tells why otherwise.
+    """
+    report = search_report(query, max_results, backend=backend, **filters)
+    if backend and report["error"]:
+        raise SearchBackendError(str(report["error"]).split(": ", 1)[-1])
+    return list(report["results"])  # type: ignore[arg-type]
+
+
+def search_images(
+    query: str,
+    max_results: int = 10,
+    *,
+    language: Optional[str] = None,
+    country: Optional[str] = None,
+) -> List[Dict]:
+    """Search for product packaging images (Serper Google Images when configured, else DuckDuckGo)."""
+    if get_settings().serper_api_key:
+        try:
+            hits = serper_images(query, max_results=max_results, language=language, country=country)
+            if hits:
+                return hits
+        except SearchBackendError:
+            pass
+    return ddgs_images(query, max_results=max_results, language=language, country=country)
+
+
+__all__ = ["search", "search_report", "search_images", "error_code", "searxng_search", "ddgs_search",
+           "ddgs_images", "serper_search", "serper_images", "tavily_search", "SearchBackendError", "BACKENDS"]
+# Stand: 24.10.2026
