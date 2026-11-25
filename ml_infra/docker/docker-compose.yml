@@ -1,0 +1,42 @@
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://genie:genie@postgres:5432/genie
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - STORAGE_BACKEND=local
+      - STORAGE_LOCAL_DIR=/app/data/images
+    volumes:
+      - ../data:/app/data
+      - ../configs:/app/configs
+    depends_on:
+      - postgres
+      - qdrant
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      - POSTGRES_USER=genie
+      - POSTGRES_PASSWORD=genie
+      - POSTGRES_DB=genie
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  qdrant:
+    image: qdrant/qdrant:v1.8.4
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+volumes:
+  postgres_data:
+  qdrant_data:
