@@ -1,0 +1,57 @@
+# Source Registry Configuration & Credibility Tiers
+
+sources:
+  tier_1:
+    description: "Authoritative regulatory, official manufacturer, and GS1 registries"
+    weight: 1.0
+    domains:
+      - "nafdac.gov.ng"
+      - "greenbook.nafdac.gov.ng"
+      - "who.int"
+      - "gs1.org"
+      - "gs1ng.org"
+      - "fda.gov"
+      - "medicines.org.uk"
+    manufacturers:
+      - "gsk.com"
+      - "novartis.com"
+      - "emzorpharma.com"
+      - "fidson.com"
+      - "getzpharma.com"
+      - "may-baker.com"
+      - "swipha.com"
+      - "chi-pharma.com"
+
+  tier_2:
+    description: "Vetted commercial clinical compendiums and licensed pharmacy chains"
+    weight: 0.6
+    domains:
+      - "drugs.com"
+      - "emdexonline.com"
+      - "dailymed.nlm.nih.gov"
+      - "medplusnigeria.com"
+      - "healthplusnigeria.com"
+      - "drugstoc.com"
+      - "field.inc"
+
+  tier_3:
+    description: "General web, media, health portals (leads only, never auto-promoted)"
+    weight: 0.2
+    domains:
+      - "pulse.ng"
+      - "punchng.com"
+      - "vanguardngr.com"
+      - "thecable.ng"
+
+blocked_domains:
+  description: "High-risk classifieds and social media blocked from training ingestion"
+  domains:
+    - "jiji.ng"
+    - "aliexpress.com"
+    - "temu.com"
+    - "facebook.com"
+    - "instagram.com"
+    - "tiktok.com"
+    - "reddit.com"
+    - "quora.com"
+    - "olx.com"

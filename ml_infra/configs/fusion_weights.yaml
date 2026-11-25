@@ -1,0 +1,23 @@
+# Signal Fusion Weights & Scoring Parameters
+
+signal_weights:
+  pharmaceuticals:
+    barcode_weight: 0.20
+    nafdac_weight: 0.30
+    batch_consistency_weight: 0.20
+    visual_similarity_weight: 0.20
+    anomaly_penalty_weight: 0.10
+
+  fmcg_food:
+    barcode_weight: 0.30
+    nafdac_weight: 0.15
+    batch_consistency_weight: 0.20
+    visual_similarity_weight: 0.25
+    anomaly_penalty_weight: 0.10
+
+hard_rules:
+  reject_on_invalid_gtin_checkdigit: true
+  reject_on_revoked_nafdac_number: true
+  reject_on_batch_expiry_mismatch: true
+  reject_on_identity_contradiction: true
+  serial_duplicate_threshold_per_hour: 5
