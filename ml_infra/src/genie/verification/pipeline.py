@@ -137,6 +137,8 @@ class VerificationPipeline:
         anomaly_score = 0.2
         color_score: Optional[float] = None
         layout_score: Optional[float] = None
+        texture_score: Optional[float] = None
+        texture_mismatch: bool = False
         visual_inconsistencies: list[str] = []
 
         if ref_img is not None:
@@ -157,6 +159,8 @@ class VerificationPipeline:
             anomaly_score = comp.anomaly_score
             color_score = comp.color_score
             layout_score = comp.layout_score
+            texture_score = comp.texture_score
+            texture_mismatch = comp.texture_mismatch
             visual_inconsistencies = comp.inconsistencies
 
         # 8. Compute Signals

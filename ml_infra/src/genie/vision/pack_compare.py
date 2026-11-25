@@ -42,6 +42,8 @@ class PackComparisonResult:
     edge_alignment_score: float
     anomaly_score: float
     sharpness_ratio: float
+    texture_score: float = 1.0
+    texture_mismatch: bool = False
     element_checks: List[ElementPositionCheck] = field(default_factory=list)
     flagged_grid_zones: List[str] = field(default_factory=list)
     inconsistencies: List[str] = field(default_factory=list)
@@ -66,12 +68,14 @@ class PackComparator:
         max_element_shift_px: float = 18.0,
         min_element_ncc: float = 0.45,
         suspect_threshold: float = 0.65,
+        min_texture_score: float = 0.55,
     ):
         self.canonical_size = canonical_size
         self.max_delta_e_ab = max_delta_e_ab
         self.max_element_shift_px = max_element_shift_px
         self.min_element_ncc = min_element_ncc
         self.suspect_threshold = suspect_threshold
+        self.min_texture_score = min_texture_score
 
         self.matcher = GeometricMatcher(
             min_inliers=20,

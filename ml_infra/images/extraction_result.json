@@ -1,0 +1,40 @@
+{
+  "product_name": "IBUMARTEM (Artemether 80 mg + Lumefantrine 480 mg Tablet)",
+  "active_ingredients": [
+    "Artemether",
+    "Lumefantrine"
+  ],
+  "manufacturer": "IBU PHARMA NIGERIA LTD., Ikenne, Ogun State, Nigeria",
+  "nafdac_number": "B4-6458",
+  "batch_number": null,
+  "manufacturing_date": null,
+  "expiry_date": null,
+  "barcode_or_datamatrix_visible": true,
+  "raw_text_detected": [
+    "IBUMARTEM",
+    "(Artemether 80 mg + Lumefantrine 480 mg Tablet",
+    "(Comprim\u00e9s d' art\u00e9mether 80 mg + de lum\u00e9fantrine 48",
+    "80 mg 480 mg",
+    "\u0648\u0642\u0641 malaria \u0628\u0633\u0631\u0639\u0629",
+    "Arr\u00eater le paludisme rapidement",
+    "Stop malaria fast",
+    "10 x 1 x 6 Tablets",
+    "Marketed by: IBU PHARMA NIGERIA LTD.",
+    "Number 1, Iabiran Street, Ikenne, Ogun State, Nigeria.",
+    "NAFDAC Reg No.: B4-6458",
+    "028730023401610",
+    "08039012030 TEXT CODE TO 1393",
+    "www.1393.co"
+  ],
+  "visible_inconsistencies": [
+    "Text 'lum\u00e9fantrine 48' on the left box is cut off, likely missing '0 mg'.",
+    "Mixing of English word 'malaria' within Arabic text '\u0648\u0642\u0641 malaria \u0628\u0633\u0631\u0639\u0629'.",
+    "Pack quantity differs between boxes: '10 x 1 x 6 Tablets' on left vs '1 x 6 Tablets' on right."
+  ],
+  "packaging_quality_assessment": {
+    "lighting_and_clarity": "Good",
+    "tamper_or_damage_signs": "None",
+    "overall_confidence": 0.95,
+    "authenticity_notes": "Standard pharmaceutical packaging with an anti-counterfeit scratch-off sticker visible on the right box containing verification codes."
+  }
+}
