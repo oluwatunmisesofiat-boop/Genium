@@ -1,0 +1,46 @@
+# Per-Category Verification Decision Thresholds
+
+categories:
+  pharmaceuticals_antimalarials:
+    description: "High-risk antimalarials (e.g. Coartem, Lonart, Amatem)"
+    genuine_min_calibrated_prob: 0.92
+    suspicious_max_calibrated_prob: 0.40
+    min_independent_signals: 3
+    allow_missing_nafdac: false
+    quality_gate_min_blur_score: 140.0
+    quality_gate_max_glare_ratio: 0.05
+    lightglue_min_inlier_ratio: 0.45
+    patchcore_max_anomaly_threshold: 0.65
+
+  pharmaceuticals_antibiotics:
+    description: "High-risk antibiotics (e.g. Augmentin, Ciprofloxacin)"
+    genuine_min_calibrated_prob: 0.90
+    suspicious_max_calibrated_prob: 0.38
+    min_independent_signals: 3
+    allow_missing_nafdac: false
+    quality_gate_min_blur_score: 130.0
+    quality_gate_max_glare_ratio: 0.06
+    lightglue_min_inlier_ratio: 0.40
+    patchcore_max_anomaly_threshold: 0.68
+
+  pharmaceuticals_general:
+    description: "General medicines and analgesics (e.g. Paracetamol, Ibuprofen)"
+    genuine_min_calibrated_prob: 0.88
+    suspicious_max_calibrated_prob: 0.35
+    min_independent_signals: 2
+    allow_missing_nafdac: false
+    quality_gate_min_blur_score: 120.0
+    quality_gate_max_glare_ratio: 0.08
+    lightglue_min_inlier_ratio: 0.35
+    patchcore_max_anomaly_threshold: 0.70
+
+  fmcg_food_beverages:
+    description: "Packaged foods, baby foods, alcoholic beverages"
+    genuine_min_calibrated_prob: 0.82
+    suspicious_max_calibrated_prob: 0.30
+    min_independent_signals: 2
+    allow_missing_nafdac: true
+    quality_gate_min_blur_score: 100.0
+    quality_gate_max_glare_ratio: 0.10
+    lightglue_min_inlier_ratio: 0.30
+    patchcore_max_anomaly_threshold: 0.75

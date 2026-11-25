@@ -1,0 +1,72 @@
+# Machine Learning Models Configuration
+
+models:
+  quality_gate:
+    name: "mobilenetv3_quality_gate"
+    version: "v1.0"
+    onnx_path: "data/models/quality_gate.onnx"
+    input_size: [224, 224]
+    device: "cpu"
+    runtime: "onnxruntime"
+
+  pack_detector:
+    name: "yolo11n_pack_detector"
+    version: "v1.2"
+    onnx_path: "data/models/yolo11n_pack.onnx"
+    confidence_threshold: 0.45
+    iou_threshold: 0.50
+    input_size: [640, 640]
+    device: "cpu"
+
+  barcode_detector:
+    name: "yolo11n_barcode_detector"
+    version: "v1.1"
+    onnx_path: "data/models/yolo11n_barcode.onnx"
+    confidence_threshold: 0.50
+    input_size: [640, 640]
+    device: "cpu"
+
+  global_embedding:
+    name: "dinov2_vit_b14"
+    version: "v2.0"
+    onnx_path: "data/models/dinov2_vitb14.onnx"
+    embedding_dim: 768
+    input_size: [518, 518]
+    device: "cpu"
+
+  local_matching:
+    feature_extractor: "superpoint"
+    matcher: "lightglue"
+    max_keypoints: 1024
+    device: "cpu"
+
+  anomaly_detection:
+    framework: "patchcore"
+    backbone: "wide_resnet50_2"
+    layers: ["layer2", "layer3"]
+    coreset_sampling_ratio: 0.10
+    device: "cpu"
+
+  ocr:
+    engine: "paddleocr"
+    version: "ppocr_v5"
+    use_angle_cls: true
+    lang: "en"
+    vlm_engine: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
+    nvidia_ocrnet: "ocdrnet"
+
+  vlm_review:
+    primary_model: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
+    backup_model: "google/gemma-3-27b-it"
+    endpoint: "https://integrate.api.nvidia.com/v1/chat/completions"
+    role: "second_opinion_triage"
+    max_tokens: 4096
+    reasoning_budget: 16384
+    temperature: 0.2
+    top_p: 0.95
+
+  nvidia_vision_endpoints:
+    retrieval: "nv-dinov2"
+    zero_shot_detection: "nv-grounding-dino"
+    ocr: "ocdrnet"
+    image_text_matching: "nv-clip"
