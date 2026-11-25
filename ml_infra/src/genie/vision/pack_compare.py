@@ -42,6 +42,8 @@ class PackComparisonResult:
     edge_alignment_score: float
     anomaly_score: float
     sharpness_ratio: float
+    texture_score: float = 1.0
+    texture_mismatch: bool = False
     element_checks: List[ElementPositionCheck] = field(default_factory=list)
     flagged_grid_zones: List[str] = field(default_factory=list)
     inconsistencies: List[str] = field(default_factory=list)
@@ -66,12 +68,14 @@ class PackComparator:
         max_element_shift_px: float = 18.0,
         min_element_ncc: float = 0.45,
         suspect_threshold: float = 0.65,
+        min_texture_score: float = 0.55,
     ):
         self.canonical_size = canonical_size
         self.max_delta_e_ab = max_delta_e_ab
         self.max_element_shift_px = max_element_shift_px
         self.min_element_ncc = min_element_ncc
         self.suspect_threshold = suspect_threshold
+        self.min_texture_score = min_texture_score
 
         self.matcher = GeometricMatcher(
             min_inliers=20,
@@ -270,6 +274,67 @@ class PackComparator:
 
         return mean_ssim, float(np.clip(edge_iou, 0.0, 1.0)), flagged_zones
 
+    @staticmethod
+    def _compute_lbp_histogram(gray: np.ndarray, deadband: int = 2) -> np.ndarray:
+        """Computes a normalized 8-neighbor Local Binary Pattern (LBP) histogram."""
+        g = gray.astype(np.int16)
+        center = g[1:-1, 1:-1] + deadband
+        offsets = [
+            (-1, -1), (-1, 0), (-1, 1),
+            (0, 1), (1, 1), (1, 0),
+            (1, -1), (0, -1),
+        ]
+        h, w = center.shape
+        codes = np.zeros((h, w), dtype=np.uint8)
+        for bit, (dy, dx) in enumerate(offsets):
+            neighbor = g[1 + dy : 1 + dy + h, 1 + dx : 1 + dx + w]
+            codes |= ((neighbor >= center).astype(np.uint8) << bit)
+        hist = np.bincount(codes.ravel(), minlength=256).astype(np.float32)
+        total = float(hist.sum())
+        if total > 0:
+            hist /= total
+        return hist
+
+    def _compare_surface_texture(
+        self, query_bgr: np.ndarray, ref_bgr: np.ndarray
+    ) -> float:
+        """Compares packaging surface micro-texture via LBP and high-frequency residual energy."""
+        q_gray = cv2.cvtColor(query_bgr, cv2.COLOR_BGR2GRAY)
+        r_gray = cv2.cvtColor(ref_bgr, cv2.COLOR_BGR2GRAY)
+
+        q_lbp = self._compute_lbp_histogram(q_gray)
+        r_lbp = self._compute_lbp_histogram(r_gray)
+        lbp_sim = float(np.clip(np.sum(np.minimum(q_lbp, r_lbp)), 0.0, 1.0))
+
+        # High-frequency micro-texture residual (Difference of Gaussians, invariant to mean brightness)
+        q_f = q_gray.astype(np.float32)
+        r_f = r_gray.astype(np.float32)
+        q_hp = q_f - cv2.GaussianBlur(q_f, (9, 9), 1.5)
+        r_hp = r_f - cv2.GaussianBlur(r_f, (9, 9), 1.5)
+
+        q_std = float(np.std(q_hp))
+        r_std = float(np.std(r_hp))
+        energy_ratio = float(min(q_std, r_std) / (max(q_std, r_std) + 1e-5))
+
+        # 4x4 grid local texture energy cosine similarity
+        h, w = q_hp.shape
+        cell_h, cell_w = h // 4, w // 4
+        q_vec = []
+        r_vec = []
+        for r_idx in range(4):
+            for c_idx in range(4):
+                y1, y2 = r_idx * cell_h, (r_idx + 1) * cell_h
+                x1, x2 = c_idx * cell_w, (c_idx + 1) * cell_w
+                q_vec.append(float(np.std(q_hp[y1:y2, x1:x2])))
+                r_vec.append(float(np.std(r_hp[y1:y2, x1:x2])))
+        q_arr = np.asarray(q_vec, dtype=np.float32)
+        r_arr = np.asarray(r_vec, dtype=np.float32)
+        denom = float(np.linalg.norm(q_arr) * np.linalg.norm(r_arr)) + 1e-5
+        grid_cos = float(np.clip(np.dot(q_arr, r_arr) / denom, 0.0, 1.0))
+
+        hf_sim = 0.50 * energy_ratio + 0.50 * grid_cos
+        return float(np.clip(0.65 * lbp_sim + 0.35 * hf_sim, 0.0, 1.0))
+
     def compare(
         self,
         query_img: np.ndarray,
@@ -310,11 +375,14 @@ class PackComparator:
         else:
             layout_score = float(0.70 * structural_ssim + 0.30 * edge_score)
 
-        # 4. Patch-Level Anomaly & Print Sharpness
+        # 4. Patch-Level Anomaly, Surface Texture & Print Sharpness
         anomaly_res = self.anomaly_detector.evaluate(
             aligned_query=aligned_query,
             aligned_reference=ref_resized,
         )
+        texture_score = self._compare_surface_texture(aligned_query, ref_resized)
+        texture_mismatch = texture_score < self.min_texture_score
+
         q_sharp = PrintForensicsAnalyzer.edge_sharpness(aligned_query)
         r_sharp = PrintForensicsAnalyzer.edge_sharpness(ref_resized)
         sharpness_ratio = float(q_sharp / (r_sharp + 1e-5))
@@ -324,9 +392,10 @@ class PackComparator:
         overall_score = float(
             np.clip(
                 0.20 * align_component
-                + 0.30 * color_score
-                + 0.35 * layout_score
-                + 0.15 * (1.0 - anomaly_res.anomaly_score),
+                + 0.25 * color_score
+                + 0.30 * layout_score
+                + 0.15 * texture_score
+                + 0.10 * (1.0 - anomaly_res.anomaly_score),
                 0.0,
                 1.0,
             )
@@ -334,6 +403,10 @@ class PackComparator:
 
         # 6. Collect Human-Readable Inconsistencies
         inconsistencies: List[str] = []
+        if texture_mismatch:
+            inconsistencies.append(
+                f"Drug package surface texture differs from canonical reference image (texture score: {texture_score:.2f} < {self.min_texture_score:.2f})."
+            )
         if not alignment.matched:
             inconsistencies.append(
                 f"Geometric layout failed alignment with reference pack (inliers: {alignment.num_inliers}, ratio: {alignment.inlier_ratio:.2f})."
@@ -363,7 +436,8 @@ class PackComparator:
 
         has_failed_element = any(not c.passed for c in element_checks)
         is_suspect = (
-            overall_score < self.suspect_threshold
+            texture_mismatch
+            or overall_score < self.suspect_threshold
             or color_score < 0.55
             or layout_score < 0.50
             or has_failed_element
@@ -383,6 +457,8 @@ class PackComparator:
             edge_alignment_score=edge_score,
             anomaly_score=anomaly_res.anomaly_score,
             sharpness_ratio=sharpness_ratio,
+            texture_score=texture_score,
+            texture_mismatch=texture_mismatch,
             element_checks=element_checks,
             flagged_grid_zones=flagged_zones,
             inconsistencies=inconsistencies,

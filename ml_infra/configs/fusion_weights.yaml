@@ -20,4 +20,5 @@ hard_rules:
   reject_on_revoked_nafdac_number: true
   reject_on_batch_expiry_mismatch: true
   reject_on_identity_contradiction: true
+  reject_on_surface_texture_mismatch: true
   serial_duplicate_threshold_per_hour: 5

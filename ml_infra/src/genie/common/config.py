@@ -16,10 +16,9 @@ class Settings(BaseSettings):
     APP_PORT: int = 8000
     LOG_LEVEL: str = "INFO"
 
-    # Vector Storage (Qdrant)
-    QDRANT_HOST: str = "localhost"
-    QDRANT_PORT: int = 6333
-    QDRANT_COLLECTION: str = "reference_packaging_faces"
+    # Local SQLite Database & Vector Storage
+    DATABASE_URL: str = "sqlite+aiosqlite:///./data/genie.db"
+    VECTOR_DB_PATH: Path = Path("./data/vectors.db")
 
     # Object Storage
     STORAGE_BACKEND: str = "local"  # "local" or "s3"

@@ -60,8 +60,8 @@ models:
     backup_model: "google/gemma-3-27b-it"
     endpoint: "https://integrate.api.nvidia.com/v1/chat/completions"
     role: "second_opinion_triage"
-    max_tokens: 4096
-    reasoning_budget: 16384
+    max_tokens: 1024
+    reasoning_budget: 4096
     temperature: 0.2
     top_p: 0.95
 

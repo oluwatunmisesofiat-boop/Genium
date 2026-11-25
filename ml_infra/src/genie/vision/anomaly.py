@@ -1,10 +1,12 @@
-"""PatchCore patch-level anomaly detection, neighborhood distance scoring, and heatmap rendering."""
+"""Patch-level anomaly detection, neighborhood distance scoring, and heatmap rendering.
+
+Demo runtime uses lightweight OpenCV reference-difference scoring.
+Roadmap: PatchCore memory-bank coreset scoring (requires per-product training data).
+"""
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 import cv2
 import numpy as np
-
-from training.anomaly.build_patchcore import PatchCoreMemoryBank, extract_patch_features
 
 
 @dataclass
@@ -26,7 +28,7 @@ class PatchCoreAnomalyDetector:
 
     def __init__(
         self,
-        memory_bank: Optional[PatchCoreMemoryBank] = None,
+        memory_bank: Optional[Any] = None,
         anomaly_threshold: float = 0.50,
         top_k: int = 5,
     ):
@@ -34,7 +36,7 @@ class PatchCoreAnomalyDetector:
         self.anomaly_threshold = anomaly_threshold
         self.top_k = top_k
 
-    def set_memory_bank(self, memory_bank: PatchCoreMemoryBank) -> None:
+    def set_memory_bank(self, memory_bank: Any) -> None:
         self.memory_bank = memory_bank
 
     def evaluate(
@@ -46,7 +48,9 @@ class PatchCoreAnomalyDetector:
         h, w = aligned_query.shape[:2]
 
         if self.memory_bank is not None:
-            # Full Memory-Bank Nearest Neighbor Search
+            # Roadmap: Full PatchCore Memory-Bank Nearest Neighbor Search (lazy import)
+            from training.anomaly.build_patchcore import extract_patch_features
+
             patch_feats, patch_coords = extract_patch_features(
                 aligned_query,
                 patch_size=self.memory_bank.patch_size,
