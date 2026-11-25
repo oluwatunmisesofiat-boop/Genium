@@ -32,7 +32,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-
+images/extraction_result.json
+images/pipeline_verdicts.json
 # Testing & Coverage
 .pytest_cache/
 .coverage
